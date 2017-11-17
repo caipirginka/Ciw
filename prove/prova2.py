@@ -80,23 +80,6 @@ orders = [
     },
 ]
 
-def create_arrival_func(k_category):
-    tick = ticks.get(k_category,None)
-    
-    def _func(t):
-        print 'arrival {}: {}'.format(t,k_category)
-        res = 1
-        if t:
-            res = tick.get(t,1) - 1 if tick else duetime
-            if not res:
-                #res = duetime if t > tick.keys()[-1] else 1
-                res = duetime
-        res = res * 1.0            #ensure float
-        if res and True:
-            print 'arrival {}: {} => {}'.format(t,k_category,res)
-        return res
-    return _func
-
 def create_batch_func(k_category):
     piece = pieces.get(k_category,None)
 
@@ -116,16 +99,12 @@ def create_batch_func(k_category):
 def zero_func(t):
     return 0.0
 
-def one_func(t):
-    return 1.0
-
 arrivals = collections.OrderedDict()
 services = collections.OrderedDict()
 transitions = collections.OrderedDict()
 batches = collections.OrderedDict()
 servers = [v_node['capacity'] for k_node,v_node in nodes.iteritems()]
 pieces = collections.OrderedDict()
-ticks = collections.OrderedDict()
 
 i_category = 0
 for k_category,v_category in categories.iteritems():
@@ -137,17 +116,14 @@ for k_category,v_category in categories.iteritems():
     transitions[clss] = [[0.0] * len(nodes)] * len(nodes)       #always go to exit node
     batches[clss] = []
     pieces[k_category] = collections.OrderedDict()
-    ticks[k_category] = collections.OrderedDict()
     i_node = 0
     for k_node,v_node in nodes.iteritems():
         #print k_node
         arrivals[clss].append(['Deterministic', 1.0])
         if v_category['node'] == k_node:
-            #arrivals[clss].append(['TimeDependent', create_arrival_func(k_category)])
             services[clss].append(['Deterministic', v_category['time'] * 1.0])
             batches[clss].append(['TimeDependent', create_batch_func(k_category)])
         else:            
-            #arrivals[clss].append(['TimeDependent', one_func])
             services[clss].append(['Deterministic', 0.0])
             batches[clss].append(['TimeDependent', zero_func])
         i_node = i_node + 1
@@ -171,8 +147,6 @@ for order in orders:
             duetime = order['duetime']
         #print piece[t]
 
-#begintime = begintime - 1
-
 if begintime != 0:
     duetime = duetime - begintime
     for piece in pieces.values():
@@ -180,20 +154,12 @@ if begintime != 0:
             piece[key - begintime] = piece[key]
             del piece[key]
 
-for k_tick,v_tick in ticks.iteritems():
-    piece = sorted(pieces.get(k_tick,[]))
-    prev = 1.0
-    for tick in piece:
-        v_tick[prev] = tick - prev + 1
-        prev = tick
-    
 print arrivals
 print services
 print transitions
 print batches
 print servers
 print pieces
-print ticks
 print total
 print begintime
 print duetime
@@ -221,7 +187,6 @@ Q = ciw.Simulation(N)
 t4 = timeit.default_timer()
 
 Q.simulate_until_max_time(duetime + 1)
-#Q.simulate_until_max_customers(total, method='Arrive')
 
 t5 = timeit.default_timer()
 
