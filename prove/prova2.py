@@ -1,3 +1,4 @@
+import sys
 import collections
 import datetime
 import dateutil.parser
@@ -31,7 +32,8 @@ categories['Primi'] = {
     'weight': 1
 }
 
-basestamp = datetime.datetime.now()
+nowstamp = datetime.datetime.now()
+basestamp = nowstamp + datetime.timedelta(minutes = 60)         #set it to 10 to have beginstamp < nowstamp => impossible
 
 orders = [
     {
@@ -129,7 +131,7 @@ for k_category,v_category in categories.iteritems():
     i_category = i_category + 1
 
 total = 0
-begintime = 0
+begintime = sys.maxint
 duetime = 0
 for order in orders:
     for item in order['items']:
@@ -154,15 +156,22 @@ if begintime != 0:
             piece[key - begintime] = piece[key]
             del piece[key]
 
-print arrivals
-print services
-print transitions
-print batches
-print servers
-print pieces
-print total
-print begintime
-print duetime
+beginstamp = basestamp + datetime.timedelta(minutes=begintime)
+duestamp = basestamp + datetime.timedelta(minutes=duetime)
+
+print 'arrivals: {}'.format(arrivals)
+print 'services: {}'.format(services)
+print 'transitions: {}'.format(transitions)
+print 'batches: {}'.format(batches)
+print 'servers: {}'.format(servers)
+print 'pieces: {}'.format(pieces)
+print 'total: {}'.format(total)
+print 'begintime: {}'.format(begintime)
+print 'duetime: {}'.format(duetime)
+print 'nowstamp: {}'.format(nowstamp.isoformat())
+print 'basestamp: {}'.format(basestamp.isoformat())
+print 'beginstamp: {} => {}'.format(beginstamp.isoformat(),'OK' if beginstamp >= nowstamp else 'KO')
+print 'duestamp: {}'.format(duestamp.isoformat())
 
 t1 = timeit.default_timer()
 
