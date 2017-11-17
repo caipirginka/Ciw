@@ -1,4 +1,6 @@
 import collections
+import datetime
+import dateutil.parser
 import ciw
 import timeit
 
@@ -29,9 +31,11 @@ categories['Primi'] = {
     'weight': 1
 }
 
+basestamp = datetime.datetime.now()
+
 orders = [
     {
-        'duetime': 0,
+        'duestamp': (basestamp + datetime.timedelta(minutes = 0)).isoformat(),
         'items': [
             {
                 'category': 'Primi',
@@ -40,7 +44,7 @@ orders = [
         ]
     },
     {
-        'duetime': 30,
+        'duestamp': (basestamp + datetime.timedelta(minutes = 30)).isoformat(),
         'items': [
             {
                 'category': 'Pizze',
@@ -57,7 +61,7 @@ orders = [
         ]
     },
     {
-        'duetime': 20,
+        'duestamp': (basestamp + datetime.timedelta(minutes = 20)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
@@ -66,7 +70,7 @@ orders = [
         ]
     },
     {
-        'duetime': 180,
+        'duestamp': (basestamp + datetime.timedelta(minutes = 180)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
@@ -130,7 +134,8 @@ duetime = 0
 for order in orders:
     for item in order['items']:
         category = categories[item['category']]
-        t = order['duetime'] - category['time'] - 1
+        delta = int(round((dateutil.parser.parse(order['duestamp']) - basestamp).total_seconds() / 60))
+        t = delta - category['time'] - 1
         #print t
         piece = pieces[item['category']]
         qty = item['qty'] * category['weight']
@@ -138,8 +143,8 @@ for order in orders:
         total = total + qty
         if t < begintime:
             begintime = t
-        if order['duetime'] > duetime:
-            duetime = order['duetime']
+        if delta > duetime:
+            duetime = delta
         #print piece[t]
 
 if begintime != 0:
