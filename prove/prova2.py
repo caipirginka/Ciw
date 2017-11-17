@@ -123,9 +123,6 @@ def create_batch_func(clss):
         return res
     return _func
 
-def zero_func(t):
-    return 0.0
-
 arrivals = collections.OrderedDict()            #arrivals ditributions for each customer class
 services = collections.OrderedDict()            #services ditributions for each customer class
 transitions = collections.OrderedDict()         #transition matrices for each customer class
@@ -161,7 +158,7 @@ for k_category,v_category in categories.iteritems():
             batches[clss].append(['TimeDependent', create_batch_func(k_category)])
         else:            
             services[clss].append(['Deterministic', 0.0])
-            batches[clss].append(['TimeDependent', zero_func])
+            batches[clss].append(['Deterministic', 0.0])
         i_node = i_node + 1
     i_category = i_category + 1
 
