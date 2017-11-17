@@ -66,7 +66,7 @@ orders = [
         ]
     },
     {
-        'duetime': 1800,
+        'duetime': 180,
         'items': [
             {
                 'category': 'Panini',
@@ -85,13 +85,8 @@ def create_batch_func(k_category):
 
     def _func(t):
         #print 'batch {}'.format(t)
-        res = 0
-        if t or True:
-            #res = piece.get(t,0) if piece else 0
-            #res = piece.get(t + 1,0) if piece else 0
-            res = piece.get(t,0) if piece else 0
-        res = res * 1.0            #ensure float
-        if res and True:
+        res = (piece.get(t,0) if piece else 0) * 1.0            #ensure float
+        if res:
             print 'batch {}: {} => {}'.format(t,k_category,res)
         return res
     return _func
