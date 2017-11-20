@@ -72,7 +72,7 @@ orders = [
         'items': [
             {
                 'category': 'Pizze',
-                'qty': 200
+                'qty': 2
             },
             {
                 'category': 'Panini',
@@ -279,9 +279,25 @@ print t3 - t2
 print t4 - t3
 print t5 - t4
 
+NodeResult = collections.namedtuple('NodeResult', 'maxwait maxtime')
+noderesults = []
+i_node = 1                  #Node 0 is always the ArrivalNode
+for k_node,v_node in nodes.iteritems():
+    maxwait = max([rec.waiting_time for rec in recs if rec.node == i_node])
+    maxtime = max([rec.exit_date for rec in recs if rec.node == i_node])
+    noderesults.append(NodeResult(maxwait,maxtime))
+    i_node = i_node + 1
+    print 'maxwait at Node {}: {}'.format(k_node,maxwait)
+    #print 'maxtime at Node {}: {}'.format(k_node,maxtime)
+    #difftime = maxtime - duetime
+    #maxstamp = basestamp + datetime.timedelta(minutes=maxtime)
+    #print 'maxtime: {}'.format(maxtime)
+    #print 'maxstamp: {}'.format(maxstamp.isoformat())
+    #print 'difftime: {}'.format(difftime)
+
 l = len(recs)
 print 'number of recs: {}'.format(l)
-if l <= 20:
+if l <= 30:
     for r in recs:
         print r
 else:
@@ -291,7 +307,7 @@ for k_clss,v_clss in Q.rejection_dict.iteritems():
     for k_node,v_node in v_clss.iteritems():
         l = len(v_node)
         print 'number of rejections for Class {} at Node {}: {}'.format(k_clss,k_node,l)
-        if l <= 20:
+        if l <= 30:
             print v_node
         else:
             print '...omissis...'
