@@ -14,7 +14,7 @@ Each Node must also have a queue length in terms of number of pieces (a negative
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
     'capacity': 8,
-    'queue': 10                     #do NOT use it!!!
+#    'queue': 10                     #do NOT use it!!!
 }
 nodes['Cucina'] = {
     'capacity': 2,
@@ -258,8 +258,13 @@ Q = ciw.Simulation(N)
 
 t4 = timeit.default_timer()
 
-Q.simulate_until_max_time(duetime + 1)                  #simulate just until is needed (with one minute more)
-#Q.simulate_until_max_customers(total, method='Finish')
+#simulate just until is needed (with one minute more).
+#This MUST be used if queues are not of infinite length 'Inf'!!!
+#Q.simulate_until_max_time(duetime + 1)                  
+
+#simulate until ALL ordered pieces are produced.
+#This MUST NOT be used if queues are not of infinite length 'Inf', otherwise it may never end!!!
+Q.simulate_until_max_customers(total, method='Finish')
 
 t5 = timeit.default_timer()
 
