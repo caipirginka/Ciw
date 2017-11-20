@@ -14,7 +14,7 @@ Each Node must also have a queue length in terms of number of pieces (a negative
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
     'capacity': 8,
-    #'queue': 10                     #do NOT use it!!!
+    'queue': 10                     #do NOT use it!!!
 }
 nodes['Cucina'] = {
     'capacity': 2,
@@ -72,7 +72,7 @@ orders = [
         'items': [
             {
                 'category': 'Pizze',
-                'qty': 2
+                'qty': 200
             },
             {
                 'category': 'Panini',
@@ -259,6 +259,7 @@ Q = ciw.Simulation(N)
 t4 = timeit.default_timer()
 
 Q.simulate_until_max_time(duetime + 1)                  #simulate just until is needed (with one minute more)
+#Q.simulate_until_max_customers(total, method='Finish')
 
 t5 = timeit.default_timer()
 
@@ -272,7 +273,20 @@ print t2 - t1
 print t3 - t2
 print t4 - t3
 print t5 - t4
-print len(recs)
-for rec in recs:
-    print rec
-print Q.rejection_dict
+
+l = len(recs)
+print 'number of recs: {}'.format(l)
+if l <= 20:
+    for r in recs:
+        print r
+else:
+    print '...omissis...'
+
+for k_clss,v_clss in Q.rejection_dict.iteritems():
+    for k_node,v_node in v_clss.iteritems():
+        l = len(v_node)
+        print 'number of rejections for Class {} at Node {}: {}'.format(k_clss,k_node,l)
+        if l <= 20:
+            print v_node
+        else:
+            print '...omissis...'
