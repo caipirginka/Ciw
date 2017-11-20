@@ -8,14 +8,17 @@ import timeit
 t0 = timeit.default_timer()
 
 u"""
-Nodes definition where each one has a name and a capacity in terms of number of pieces
+Nodes definition where each one has a name and a capacity in terms of number of pieces.
+Each Node must also have a queue length in terms of number of pieces (a negative number means infinite: 'Inf').
 """
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
-    'capacity': 8
+    'capacity': 8,
+    'queue': 10
 }
 nodes['Cucina'] = {
-    'capacity': 2
+    'capacity': 2,
+    'queue': -1
 }
 
 u"""
@@ -127,7 +130,8 @@ arrivals = collections.OrderedDict()            #arrivals ditributions for each 
 services = collections.OrderedDict()            #services ditributions for each customer class
 transitions = collections.OrderedDict()         #transition matrices for each customer class
 batches = collections.OrderedDict()             #batch ditributions for each customer class
-servers = [v_node['capacity'] for k_node,v_node in nodes.iteritems()]           #server quantity for each Node
+servers = [v_node['capacity'] for k_node,v_node in nodes.iteritems()]           #available servers at each Node
+queues = ['Inf' if v_node['queue'] < 0 else v_node['queue'] for k_node,v_node in nodes.iteritems()]           #max queue lentgh at each Node
 pieces = collections.OrderedDict()              #quantity of orderd pieces for each customer class
 
 u"""
@@ -219,6 +223,7 @@ print 'services: {}'.format(services)
 print 'transitions: {}'.format(transitions)
 print 'batches: {}'.format(batches)
 print 'servers: {}'.format(servers)
+print 'queues: {}'.format(queues)
 print 'pieces: {}'.format(pieces)
 print 'total: {}'.format(total)
 print 'begintime: {}'.format(begintime)
@@ -237,7 +242,8 @@ N = ciw.create_network(
     Service_distributions=services,
     Transition_matrices=transitions,
     Batching_distributions=batches,
-    Number_of_servers=servers
+    Number_of_servers=servers,
+    Queue_capacities=queues
 )
 
 t2 = timeit.default_timer()
@@ -269,3 +275,4 @@ print t5 - t4
 print len(recs)
 for rec in recs:
     print rec
+print Q.rejection_dict
