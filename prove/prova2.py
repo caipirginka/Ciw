@@ -14,11 +14,11 @@ Each Node must also have a queue length in terms of number of pieces (a negative
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
     'capacity': 8,
-    'queue': 10
+    'queue': -1                     #do NOT use it!!!
 }
 nodes['Cucina'] = {
     'capacity': 2,
-    'queue': -1
+    'queue': -1                     #do NOT use it!!!
 }
 
 u"""
