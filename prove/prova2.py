@@ -15,7 +15,7 @@ Each Node must also have a queue length in terms of number of pieces (a negative
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
 #    'capacity': [[8,50.0],[2,100.0]],
-    'capacity': 8,
+    'capacity': 4,
 #    'queue': 10                     #do NOT use it!!!
 }
 nodes['Cucina'] = {
@@ -38,7 +38,7 @@ categories['Pizze'] = {
 }
 categories['Panini'] = {
     'node': 'Pizzeria',
-    'time': 5.0,
+    'time': 4.0,
     'weight': 1
 }
 categories['Primi'] = {
@@ -76,7 +76,7 @@ orders = [
         'items': [
             {
                 'category': 'Pizze',
-                'qty': 2
+                'qty': 8
             },
             {
                 'category': 'Panini',
@@ -93,12 +93,12 @@ orders = [
         'items': [
             {
                 'category': 'Panini',
-                'qty': 1
+                'qty': 2
             },
         ]
     },
     {
-        'duestamp': (openstamp + datetime.timedelta(minutes = 25)).isoformat(),
+        'duestamp': (openstamp + datetime.timedelta(minutes = 29)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
@@ -123,6 +123,27 @@ orders = [
             }
         ]
     },
+]
+
+orders = [
+    {
+        'duestamp': (openstamp + datetime.timedelta(minutes = 0)).isoformat(),
+        'items': [
+            {
+                'category': 'Panini',
+                'qty': 12
+            }
+        ]
+    },
+    {
+        'duestamp': (openstamp + datetime.timedelta(minutes = 9)).isoformat(),
+        'items': [
+            {
+                'category': 'Panini',
+                'qty': 1
+            }
+        ]
+    }
 ]
 
 def create_batch_func(clss):
@@ -314,26 +335,36 @@ print t3 - t2
 print t4 - t3
 print t5 - t4
 
-NodeResult = collections.namedtuple('NodeResult', 'count meanwait maxwait maxtime')
+NodeResult = collections.namedtuple('NodeResult', 'count meanwait maxwait countlate meanlate maxlate')
 slots = []
 noderesults = []
 slottime = opentime
 slotsize = 10.0
 while slottime < closetime:
     slotstamp = (beginstamp + datetime.timedelta(minutes = slottime)).isoformat()
-    print '{}'.format(slotstamp)
+    print '{} => {}'.format(slottime,slotstamp)
     i_node = 1                  #Node 0 is always the ArrivalNode
     for k_node,v_node in nodes.iteritems():
-        results = [rec for rec in recs if rec.node == i_node and rec.exit_date >= slottime and rec.exit_date < slottime + slotsize]
+        def _in_timeslot(rec,want_late):
+            duedate = rec.arrival_date + rec.service_time
+            was_late = rec.exit_date >= slottime + slotsize
+            return rec.node == i_node and duedate >= slottime and duedate < slottime + slotsize and was_late == want_late
+            
+        results = [rec for rec in recs if _in_timeslot(rec,False)]
         count = len(results) * 1.0
         waits = [res.waiting_time for res in results]
         meanwait = sum(waits) / count if waits else 0.0
         maxwait = max(waits) if waits else 0.0
-        times = [res.exit_date for res in results]
-        maxtime = max(times) if times else 0.0
-        noderesults.append(NodeResult(count,meanwait,maxwait,maxtime))
+
+        results = [rec for rec in recs if _in_timeslot(rec,True)]
+        countlate = len(results) * 1.0
+        lates = [res.exit_date - (res.arrival_date + res.service_time) for res in results]
+        countlate = len(lates) * 1.0
+        meanlate = sum(lates) / countlate if lates else 0.0
+        maxlate = max(lates) if lates else 0.0
+        noderesults.append(NodeResult(count,meanwait,maxwait,countlate,meanlate,maxlate))
         i_node = i_node + 1
-        print '   {}: {} {} {} {}'.format(k_node,count,meanwait,maxwait,maxtime)
+        print '   {}: {} {} {} {} {} {}'.format(k_node,count,meanwait,maxwait,countlate,meanlate,maxlate)
     slottime = slottime + slotsize
 
 l = len(recs)
