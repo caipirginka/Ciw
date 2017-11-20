@@ -48,10 +48,12 @@ categories['Primi'] = {
 }
 
 u"""
-Store the current timestamp and suppose the simulation starts a few minutes in the future.
+Set the beginning and ending timestamp between which order pick-ups may be requested.
+Set the timestamp when production can actually start.
 """
-nowstamp = datetime.datetime.now()
-basestamp = nowstamp + datetime.timedelta(minutes = 60)         #set it to 10 to have beginstamp < nowstamp => impossible
+openstamp = datetime.datetime.now()                             #for testing, always accept orders pick-ups starting from now
+closestamp = openstamp + datetime.timedelta(minutes = 120)      #close after two hours and refuse later order pick-ups
+minstamp = openstamp + datetime.timedelta(minutes = -20)        #actual production starts 20 minutes before first order pick-up
 
 u"""
 Orders to simulate, where each one has a timestamp where it must be ready for pick up and list of ordered items.
@@ -61,7 +63,7 @@ Orders does not need to be in any particular order.
 """
 orders = [
     {
-        'duestamp': (basestamp + datetime.timedelta(minutes = 0)).isoformat(),
+        'duestamp': (openstamp + datetime.timedelta(minutes = 0)).isoformat(),
         'items': [
             {
                 'category': 'Primi',
@@ -70,7 +72,7 @@ orders = [
         ]
     },
     {
-        'duestamp': (basestamp + datetime.timedelta(minutes = 30)).isoformat(),
+        'duestamp': (openstamp + datetime.timedelta(minutes = 30)).isoformat(),
         'items': [
             {
                 'category': 'Pizze',
@@ -87,7 +89,7 @@ orders = [
         ]
     },
     {
-        'duestamp': (basestamp + datetime.timedelta(minutes = 20)).isoformat(),
+        'duestamp': (openstamp + datetime.timedelta(minutes = 20)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
@@ -96,7 +98,7 @@ orders = [
         ]
     },
     {
-        'duestamp': (basestamp + datetime.timedelta(minutes = 180)).isoformat(),
+        'duestamp': (openstamp + datetime.timedelta(minutes = 180)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
@@ -177,8 +179,9 @@ For each item of each order, calculate and store the number of pieces that must 
 and the simulation time when they must enter.
 The number of pieces is calculated by multiplying the ordered quantity by the weight of the item's Category.
 The simulation time is calculated by subtracting the production time of the item's Category from the requested pick-up timestamp (duestamp).
-The requested pick-up timestamp is tansformed to simulation time by calculating the difference in minutes from the timestamp
-of simulation start (basestamp).
+The requested pick-up timestamp is tansformed to simulation time by calculating its difference in minutes 
+from the minimum accepted orders pick-up timestamp (openstamp).
+WARN!!! If it's negative, the order must be rejected!!!
 Inside the "pieces" dictionary there's an entry for each Category that had at least one item ordered, where the key is the Category name
 and the value is a dictionary where each key is the simulation time where some piece must enter the system and the value is the number of pieces
 that must enter.
@@ -187,7 +190,7 @@ Also the minimum and maximum needed simulation time are calculated and stored.
 for order in orders:
     for item in order['items']:
         category = categories[item['category']]
-        delta = int(round((dateutil.parser.parse(order['duestamp']) - basestamp).total_seconds() / 60))
+        delta = int(round((dateutil.parser.parse(order['duestamp']) - openstamp).total_seconds() / 60))
         t = delta - category['time'] - 1
         #print t
         piece = pieces[item['category']]
@@ -201,24 +204,32 @@ for order in orders:
         #print piece[t]
 
 u"""
-If the minimum simulation time is negative, it means that the simulation must begin earlier than what was foresee
+If the minimum simulation time is negative, it means that the simulation must begin earlier than what was foresaw
 (this can happen if an ordered item was in a Category with a long production time).
 If it is positive, it means that the simulation may start later (this can happen if no order is due very soon).
 To cope with this, all simulation enter time for all ordered pieces must be moved in the future or in the past,
 so that their relative simulation enter time is preserved.
 """
 if begintime != 0:
-    duetime = duetime - begintime
     for piece in pieces.values():
         for key in piece.keys():
             piece[key - begintime] = piece[key]
             del piece[key]
 
 u"""
-Calculate and store the actual timestamps for simulation start and end.
+All simulation time moments must be moved accordingly to the actual simulation time instant.
+Also calculate and store the simulation time corresponding to the minimum and maxint acceptable order pick-up timestamp.
 """
-beginstamp = basestamp + datetime.timedelta(minutes=begintime)
-duestamp = basestamp + datetime.timedelta(minutes=duetime)
+opentime = 0 - begintime
+closetime = (closestamp - openstamp).total_seconds() / 60  - begintime
+duetime = duetime - begintime
+
+u"""
+Calculate and store the actual timestamps for simulation start end and for last requested order pick-up.
+The simulation must begin when the first piece must go into production.
+"""
+beginstamp = openstamp + datetime.timedelta(minutes=begintime)
+duestamp = openstamp + datetime.timedelta(minutes=duetime)
 
 print 'arrivals: {}'.format(arrivals)
 print 'services: {}'.format(services)
@@ -229,13 +240,18 @@ print 'queues: {}'.format(queues)
 print 'pieces: {}'.format(pieces)
 print 'total: {}'.format(total)
 print 'begintime: {}'.format(begintime)
+print 'opentime: {}'.format(opentime)
 print 'duetime: {}'.format(duetime)
-print 'nowstamp: {}'.format(nowstamp.isoformat())
-print 'basestamp: {}'.format(basestamp.isoformat())
-#if the simulation was started before current time, it means that the ordered items are not actually producible by the system,
-#because their production should have already started
-print 'beginstamp: {} => {}'.format(beginstamp.isoformat(),'OK' if beginstamp >= nowstamp else 'KO')
-print 'duestamp: {}'.format(duestamp.isoformat())
+print 'closetime: {}'.format(closetime)
+print 'openstamp: {}'.format(openstamp.isoformat())
+print 'closestamp: {}'.format(closestamp.isoformat())
+print 'minstamp: {}'.format(minstamp.isoformat())
+#if the simulation was started before the timestamp when production can actually start (minstamp),
+#it means that the ordered items are not actually producible by the system.
+print 'beginstamp: {} => {}'.format(beginstamp.isoformat(),'OK' if beginstamp >= minstamp else 'KO')
+#if the simulation must end after the timestamp when the last order puck-up is acceptable (closestamp),
+#it means that the ordered items are not actually producible by the system.
+print 'duestamp: {} => {}'.format(duestamp.isoformat(),'OK' if duestamp <= closestamp else 'KO')
 
 t1 = timeit.default_timer()
 
@@ -260,13 +276,17 @@ Q = ciw.Simulation(N)
 
 t4 = timeit.default_timer()
 
-#simulate just until is needed (with one minute more).
-#This MUST be used if queues are not of infinite length 'Inf'!!!
-#Q.simulate_until_max_time(duetime + 1)                  
-
 #simulate until ALL ordered pieces are produced.
 #This MUST NOT be used if queues are not of infinite length 'Inf', otherwise it may never end!!!
-Q.simulate_until_max_customers(total, method='Finish')
+#Q.simulate_until_max_customers(total, method='Finish')
+
+#simulate just until is needed (with one minute more).
+#This can be used if queues are not of infinite length 'Inf'!!!
+#Q.simulate_until_max_time(duetime + 1)                  
+
+#simulate until the last order pick-Up was acceptable (with one minute more).
+#This can be used if queues are not of infinite length 'Inf'!!!
+Q.simulate_until_max_time(closetime + 1)
 
 t5 = timeit.default_timer()
 
@@ -292,7 +312,7 @@ for k_node,v_node in nodes.iteritems():
     print 'maxwait at Node {}: {}'.format(k_node,maxwait)
     #print 'maxtime at Node {}: {}'.format(k_node,maxtime)
     #difftime = maxtime - duetime
-    #maxstamp = basestamp + datetime.timedelta(minutes=maxtime)
+    #maxstamp = openstamp + datetime.timedelta(minutes=maxtime)
     #print 'maxtime: {}'.format(maxtime)
     #print 'maxstamp: {}'.format(maxstamp.isoformat())
     #print 'difftime: {}'.format(difftime)
