@@ -14,11 +14,11 @@ Each Node must also have a queue length in terms of number of pieces (a negative
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
     'capacity': 8,
-    'queue': -1                     #do NOT use it!!!
+    #'queue': 10                     #do NOT use it!!!
 }
 nodes['Cucina'] = {
     'capacity': 2,
-    'queue': -1                     #do NOT use it!!!
+    #'queue': -1                     #do NOT use it!!!
 }
 
 u"""
@@ -130,8 +130,8 @@ arrivals = collections.OrderedDict()            #arrivals ditributions for each 
 services = collections.OrderedDict()            #services ditributions for each customer class
 transitions = collections.OrderedDict()         #transition matrices for each customer class
 batches = collections.OrderedDict()             #batch ditributions for each customer class
-servers = [v_node['capacity'] for k_node,v_node in nodes.iteritems()]           #available servers at each Node
-queues = ['Inf' if v_node['queue'] < 0 else v_node['queue'] for k_node,v_node in nodes.iteritems()]           #max queue lentgh at each Node
+servers = ['Inf' if v_node.get('capacity',-1) < 0 else v_node['capacity'] for k_node,v_node in nodes.iteritems()]    #available servers at each Node
+queues = ['Inf' if v_node.get('queue',-1) < 0 else v_node['queue'] for k_node,v_node in nodes.iteritems()]           #max queue lentgh at each Node
 pieces = collections.OrderedDict()              #quantity of orderd pieces for each customer class
 
 u"""
