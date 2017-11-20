@@ -125,13 +125,13 @@ orders = [
     },
 ]
 
-orders = [
+NOorders = [
     {
         'duestamp': (openstamp + datetime.timedelta(minutes = 0)).isoformat(),
         'items': [
             {
                 'category': 'Panini',
-                'qty': 12
+                'qty': 10
             }
         ]
     },
@@ -164,6 +164,9 @@ def create_batch_func(clss):
         return res
     return _func
 
+#will contain the available production power at each Node
+NodePower = collections.namedtuple('NodePower', 'capacity time count')
+powers = [NodePower(sys.maxint,0.0,0.0) if v_node.get('capacity',-1) < 0 else NodePower(v_node['capacity'],0.0,0.0) for k_node,v_node in nodes.iteritems()]
 arrivals = collections.OrderedDict()            #arrivals ditributions for each customer class
 services = collections.OrderedDict()            #services ditributions for each customer class
 transitions = collections.OrderedDict()         #transition matrices for each customer class
@@ -196,6 +199,9 @@ for k_category,v_category in categories.iteritems():
         #print k_node
         arrivals[clss].append(['Deterministic', 1.0])
         if v_category['node'] == k_node:
+            #add to the power of the Node for current Category the weighted time of the Category and increment the Category counter
+            power = powers[i_node]
+            powers[i_node] = NodePower(power.capacity,power.time + v_category['time'] * v_category['weight'],power.count + 1)
             services[clss].append(['Deterministic', v_category['time'] * 1.0])
             batches[clss].append(['TimeDependent', create_batch_func(k_category)])
         else:            
@@ -265,6 +271,7 @@ The simulation must begin when the first piece must go into production.
 beginstamp = openstamp + datetime.timedelta(minutes=begintime)
 duestamp = openstamp + datetime.timedelta(minutes=duetime)
 
+print 'powers: {}'.format(powers)
 print 'arrivals: {}'.format(arrivals)
 print 'services: {}'.format(services)
 print 'transitions: {}'.format(transitions)
@@ -335,7 +342,7 @@ print t3 - t2
 print t4 - t3
 print t5 - t4
 
-NodeResult = collections.namedtuple('NodeResult', 'count meanwait maxwait countlate meanlate maxlate')
+NodeResult = collections.namedtuple('NodeResult', 'load count meanwait maxwait countlate meanlate maxlate')
 slots = []
 noderesults = []
 slottime = opentime
@@ -355,6 +362,7 @@ while slottime < closetime:
         waits = [res.waiting_time for res in results]
         meanwait = sum(waits) / count if waits else 0.0
         maxwait = max(waits) if waits else 0.0
+        #load = meanwait / slotsize
 
         results = [rec for rec in recs if _in_timeslot(rec,True)]
         countlate = len(results) * 1.0
@@ -362,9 +370,14 @@ while slottime < closetime:
         countlate = len(lates) * 1.0
         meanlate = sum(lates) / countlate if lates else 0.0
         maxlate = max(lates) if lates else 0.0
-        noderesults.append(NodeResult(count,meanwait,maxwait,countlate,meanlate,maxlate))
+
+        power = powers[i_node - 1]                  #there's no ArrivalNode here
+        #load = (count + countlate) / ((power.capacity * slotsize) / (power.time / power.count))
+        load = count / ((power.capacity * slotsize) / (power.time / power.count))
+        
+        noderesults.append(NodeResult(load,count,meanwait,maxwait,countlate,meanlate,maxlate))
         i_node = i_node + 1
-        print '   {}: {} {} {} {} {} {}'.format(k_node,count,meanwait,maxwait,countlate,meanlate,maxlate)
+        print '   {}: {} ({} {} {} {} {} {})'.format(k_node,load,count,meanwait,maxwait,countlate,meanlate,maxlate)
     slottime = slottime + slotsize
 
 l = len(recs)
