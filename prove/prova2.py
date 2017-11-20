@@ -98,6 +98,19 @@ orders = [
         ]
     },
     {
+        'duestamp': (openstamp + datetime.timedelta(minutes = 25)).isoformat(),
+        'items': [
+            {
+                'category': 'Panini',
+                'qty': 4
+            },
+            {
+                'category': 'Primi',
+                'qty': 1
+            }
+        ]
+    },
+    {
         'duestamp': (openstamp + datetime.timedelta(minutes = 180)).isoformat(),
         'items': [
             {
@@ -301,21 +314,27 @@ print t3 - t2
 print t4 - t3
 print t5 - t4
 
-NodeResult = collections.namedtuple('NodeResult', 'maxwait maxtime')
+NodeResult = collections.namedtuple('NodeResult', 'count meanwait maxwait maxtime')
+slots = []
 noderesults = []
-i_node = 1                  #Node 0 is always the ArrivalNode
-for k_node,v_node in nodes.iteritems():
-    maxwait = max([rec.waiting_time for rec in recs if rec.node == i_node])
-    maxtime = max([rec.exit_date for rec in recs if rec.node == i_node])
-    noderesults.append(NodeResult(maxwait,maxtime))
-    i_node = i_node + 1
-    print 'maxwait at Node {}: {}'.format(k_node,maxwait)
-    #print 'maxtime at Node {}: {}'.format(k_node,maxtime)
-    #difftime = maxtime - duetime
-    #maxstamp = openstamp + datetime.timedelta(minutes=maxtime)
-    #print 'maxtime: {}'.format(maxtime)
-    #print 'maxstamp: {}'.format(maxstamp.isoformat())
-    #print 'difftime: {}'.format(difftime)
+slottime = opentime
+slotsize = 10.0
+while slottime < closetime:
+    slotstamp = (beginstamp + datetime.timedelta(minutes = slottime)).isoformat()
+    print '{}'.format(slotstamp)
+    i_node = 1                  #Node 0 is always the ArrivalNode
+    for k_node,v_node in nodes.iteritems():
+        results = [rec for rec in recs if rec.node == i_node and rec.exit_date >= slottime and rec.exit_date < slottime + slotsize]
+        count = len(results) * 1.0
+        waits = [res.waiting_time for res in results]
+        meanwait = sum(waits) / count if waits else 0.0
+        maxwait = max(waits) if waits else 0.0
+        times = [res.exit_date for res in results]
+        maxtime = max(times) if times else 0.0
+        noderesults.append(NodeResult(count,meanwait,maxwait,maxtime))
+        i_node = i_node + 1
+        print '   {}: {} {} {} {}'.format(k_node,count,meanwait,maxwait,maxtime)
+    slottime = slottime + slotsize
 
 l = len(recs)
 print 'number of recs: {}'.format(l)
