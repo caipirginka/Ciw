@@ -9,10 +9,12 @@ t0 = timeit.default_timer()
 
 u"""
 Nodes definition where each one has a name and a capacity in terms of number of pieces.
+The capacity may also be an array of two-items array to specify servers shifts, as explained in Ciw documentation.
 Each Node must also have a queue length in terms of number of pieces (a negative number means infinite: 'Inf').
 """
 nodes = collections.OrderedDict()
 nodes['Pizzeria'] = {
+#    'capacity': [[8,50.0],[2,100.0]],
     'capacity': 8,
 #    'queue': 10                     #do NOT use it!!!
 }
